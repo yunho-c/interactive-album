@@ -106,6 +106,8 @@
 			serial: 'SN-66778J'
 		}
 	];
+	const HARDCODED_SPLAT_URL = 'https://raw.githubusercontent.com/willeastcott/assets/main/biker.ply';
+	const splatViewerUrl = `/supersplat-viewer/index.html?content=${encodeURIComponent(HARDCODED_SPLAT_URL)}&noui&aa`;
 
 	let inspectedId = $state<number | null>(null);
 	let hoverOffsets = $state<Record<number, number>>({});
@@ -256,16 +258,18 @@
 				in:receive={{ key: inspectedPhoto.id }}
 			>
 				<div class="relative z-10" style="backface-visibility:hidden;transform:translateZ(1px);">
-					<div class="relative h-72 w-72 overflow-hidden bg-gray-800 shadow-inner pointer-events-none md:h-96 md:w-96">
-						<img
-							src={inspectedPhoto.image}
-							alt={inspectedPhoto.title}
-							class="h-full w-full object-cover brightness-90 contrast-125 sepia-[0.3]"
+					<div class="relative h-72 w-72 overflow-hidden bg-gray-950 shadow-inner md:h-96 md:w-96">
+						<iframe
+							src={splatViewerUrl}
+							title={`Alive image viewer for ${inspectedPhoto.title}`}
+							class="h-full w-full border-0"
+							loading="eager"
 							referrerpolicy="no-referrer"
-						/>
-						<div class="absolute inset-0 bg-black/10 mix-blend-overlay"></div>
+						></iframe>
+						<div class="pointer-events-none absolute inset-0 bg-black/15 mix-blend-overlay"></div>
+						<div class="pointer-events-none absolute inset-0 ring-1 ring-white/10 ring-inset"></div>
 						<div
-							class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dust.png')] opacity-40 mix-blend-screen"
+							class="pointer-events-none absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dust.png')] opacity-20 mix-blend-screen"
 						></div>
 					</div>
 					<div class="pointer-events-none mt-4 text-center font-handwriting text-3xl text-gray-800 opacity-80">
@@ -300,7 +304,7 @@
 			>
 				<div class="flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-2 backdrop-blur-md">
 					<MousePointer2 size={16} class="animate-pulse" />
-					<span>Click and drag to inspect</span>
+					<span>Drag in frame to orbit alive image</span>
 				</div>
 				<span class="text-xs text-white/40">Click outside to close</span>
 			</div>
