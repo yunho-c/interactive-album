@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { appStore } from '$lib/stores/app-store';
 	import { MousePointer2 } from 'lucide-svelte';
+	import { fromStore } from 'svelte/store';
 	import { cubicOut } from 'svelte/easing';
 	import { crossfade, fade } from 'svelte/transition';
 	import { onDestroy } from 'svelte';
@@ -107,11 +109,29 @@
 		}
 	];
 	const HARDCODED_SPLAT_URL = 'https://raw.githubusercontent.com/willeastcott/assets/main/biker.ply';
-	const splatViewerUrl = `/supersplat-viewer/index.html?content=${encodeURIComponent(HARDCODED_SPLAT_URL)}&noui&aa`;
+	const appState = fromStore(appStore);
 
-	let inspectedId = $state<number | null>(null);
-	let hoverOffsets = $state<Record<number, number>>({});
-	let hoverId = $state<number | null>(null);
+	const preferences = $derived(appState.current.preferences);
+	const inspectedId = $derived(appState.current.inspectedId);
+	const hoverOffsets = $derived(appState.current.hoverOffsets);
+	const hoverId = $derived(appState.current.hoverId);
+
+	const splatViewerUrl = $derived.by(() => {
+		const searchParams = new URLSearchParams({
+			content: HARDCODED_SPLAT_URL
+		});
+
+		if (preferences.supersplatHideUi) {
+			searchParams.set('noui', '1');
+		}
+
+		if (preferences.supersplatAntialias) {
+			searchParams.set('aa', '1');
+		}
+
+		return `/supersplat-viewer/index.html?${searchParams.toString()}`;
+	});
+
 	let rotateX = $state(0);
 	let rotateY = $state(0);
 	let targetRotateX = 0;
@@ -149,7 +169,7 @@
 	};
 
 	const openInspection = (photoId: number) => {
-		inspectedId = photoId;
+		appStore.openInspection(photoId);
 		targetRotateX = 0;
 		targetRotateY = 0;
 		rotateX = 0;
@@ -157,25 +177,26 @@
 	};
 
 	const closeInspection = () => {
-		inspectedId = null;
+		appStore.closeInspection();
 		targetRotateX = 0;
 		targetRotateY = 0;
 		ensureTiltAnimation();
 	};
 
 	const updateHover = (photoId: number) => {
-		hoverId = photoId;
-		hoverOffsets = {
-			...hoverOffsets,
-			[photoId]: Math.random() * 4 - 2
-		};
+		const offset = Math.random() * preferences.hoverRotateJitter * 2 - preferences.hoverRotateJitter;
+		appStore.setHover(photoId, offset);
 	};
 
 	const clearHover = () => {
-		hoverId = null;
+		appStore.clearHover();
 	};
 
 	const handleBackdropPointerDown = (event: PointerEvent) => {
+		if (!preferences.closeOnBackdropClick) {
+			return;
+		}
+
 		if (event.target === event.currentTarget) {
 			closeInspection();
 		}
@@ -185,8 +206,8 @@
 		if (event.buttons !== 1) {
 			return;
 		}
-		targetRotateY += event.movementX * 0.6;
-		targetRotateX -= event.movementY * 0.6;
+		targetRotateY += event.movementX * preferences.inspectDragSensitivity;
+		targetRotateX -= event.movementY * preferences.inspectDragSensitivity;
 		ensureTiltAnimation();
 	};
 
